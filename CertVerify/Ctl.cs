@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using CertVerify.Certificates;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
 
 namespace CertVerify
@@ -11,7 +13,8 @@ namespace CertVerify
     public class Ctl
     {
         private const string TrustedCertificatesFolder = "trustedCertificates";
-        private HashSet<string> _trustedIssuers = new HashSet<string>();
+        private Dictionary<string, X509Certificate> _trustedIssuers = new Dictionary<string, X509Certificate>();
+
         private ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         FileSystemWatcher _trustedCertificatesWatcher = new FileSystemWatcher();
         private readonly CrlCache _crlCache = new CrlCache();
@@ -49,11 +52,11 @@ namespace CertVerify
 
         public void Init()
         {
-            HashSet<string> tmpTrustedIssuers = GetTrustedIssuersList();
+            Dictionary<string,X509Certificate> tmpTrustedIssuers = GetTrustedIssuersList();
             _rwLock.EnterWriteLock();
             try
             {
-                _crlCache.RemoveCrlEntries(_trustedIssuers.Except(tmpTrustedIssuers));
+                _crlCache.RemoveCrlEntries(_trustedIssuers.Keys.Except(tmpTrustedIssuers.Keys));
                 _trustedIssuers = tmpTrustedIssuers;
             }
             finally
@@ -63,9 +66,9 @@ namespace CertVerify
 
         }
 
-        private HashSet<string> GetTrustedIssuersList()
+        private Dictionary<string,X509Certificate> GetTrustedIssuersList()
         {
-            HashSet<string> tmpTrustedIssuers = new HashSet<string>();
+            Dictionary<string, X509Certificate> tmpTrustedIssuers = new Dictionary<string, X509Certificate>();
             List<string> certPaths =
                 "*.crt|*.cer".Split('|').SelectMany(filter => Directory.GetFiles(TrustedCertificatesFolder, filter)).
                     ToList();
@@ -86,8 +89,8 @@ namespace CertVerify
             foreach (var certificate in rootCertificates.Union(intermediateCertificates))
             {
                 string authorityId = certificate.GetSubjectKeyIdentifier();
-                if (!tmpTrustedIssuers.Contains(authorityId))
-                    tmpTrustedIssuers.Add(authorityId);
+                if (!tmpTrustedIssuers.ContainsKey(authorityId))
+                    tmpTrustedIssuers.Add(authorityId,certificate);
                 certificates.Remove(certificate);
             }
             if (certificates.Count != 0)
@@ -110,20 +113,35 @@ namespace CertVerify
         public bool MayTrustTo(X509Certificate certificate)
         {
             string authorityId = certificate.GetAuthorityKeyIdentifier();
+            X509Certificate issuerCertifivate = null;
+           
             bool result;
             _rwLock.EnterReadLock();
             try
             {
-                result = _trustedIssuers.Contains(authorityId);
+                result = _trustedIssuers.TryGetValue(authorityId, out issuerCertifivate);
             }
             finally
             {
                 _rwLock.ExitReadLock();
             }
-            return result;
+            if (result && IsSignatureValid(certificate, issuerCertifivate))
+                return true;
+            return false;
         }
 
-
-
+        private bool IsSignatureValid(X509Certificate certificateToCheck, X509Certificate signerCertificate)
+        {
+            var publicKey = signerCertificate.GetPublicKey();
+            try
+            {
+                certificateToCheck.Verify(publicKey);
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }

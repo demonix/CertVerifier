@@ -19,9 +19,7 @@ namespace CertVerify
         private List<string> _cdpAddresses = new List<string>();
         
         public bool Valid
-        {
-            get { return !NotYetValid && !IsExpired; }
-        }
+        { get { return !NotYetValid && !IsExpired; }}
 
         private bool NotYetValid
         { get { return DateTime.Now < _notBefore; } }
@@ -32,9 +30,9 @@ namespace CertVerify
         private bool WillExpireAt (DateTime dateTime)
         { return dateTime > _notAfter; }
 
+        private TimeSpan TimeToNextPublish
+        { get { return DateTime.Now > _nextPublish ? _nextPublish.Subtract(DateTime.Now) : new TimeSpan(0); } }
 
-        private bool NextCrlIssued
-        { get { return DateTime.Now > _nextPublish; } }
 
 
         public Crl(List<string> cdpAddresses)
@@ -78,9 +76,7 @@ namespace CertVerify
 
         }
 
-        private TimeSpan TimeToNextPublish
-        { get { return DateTime.Now > _nextPublish ? _nextPublish.Subtract(DateTime.Now) : new TimeSpan(0); } }
-
+        
         private void ShedeuleNextUpdate()
         {
 
