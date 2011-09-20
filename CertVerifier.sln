@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CertVerify", "CertVerify\Ce
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CertVerifierService", "CertVerifierService\CertVerifierService.csproj", "{AA9E730A-6649-408C-B232-5D10E7DB8030}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerifyCert", "VerifyCert\VerifyCert.csproj", "{9E43804C-3B9D-4C5F-AF06-4239A89C1083}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VerifyCertSpeedTest", "VerifyCertSpeedTest\VerifyCertSpeedTest.csproj", "{9E43804C-3B9D-4C5F-AF06-4239A89C1083}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

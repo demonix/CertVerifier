@@ -11,7 +11,6 @@ namespace CertVerify
         
         TimeSpan _updateIntervalAfterNewCrlIssued = TimeSpan.FromMinutes(10);
         TimeSpan _updateIntervalAfterExpire = TimeSpan.FromSeconds(10);
-
         ReaderWriterLockSlim _rwLocker = new ReaderWriterLockSlim();
         HashSet<string> _revokedCerts = new HashSet<string>();
         DateTime _notBefore = DateTime.MaxValue;
