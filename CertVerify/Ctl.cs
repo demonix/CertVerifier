@@ -17,7 +17,7 @@ namespace CertVerify
 
         private ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
         FileSystemWatcher _trustedCertificatesWatcher = new FileSystemWatcher();
-        private readonly CrlCache _crlCache = new CrlCache();
+        private readonly CrlCache _crlCache;
 
         public CrlCache CrlCache
         {
@@ -26,7 +26,8 @@ namespace CertVerify
 
         public Ctl()
         {
-            Init();
+            _crlCache = new CrlCache(this);
+            FillCtl();
             _trustedCertificatesWatcher.Path = TrustedCertificatesFolder;
             _trustedCertificatesWatcher.Changed += OnTrustedCertificatesFolderContentChanged;
             _trustedCertificatesWatcher.Created += OnTrustedCertificatesFolderContentChanged;
@@ -47,10 +48,10 @@ namespace CertVerify
                 _trustedCertificatesWatcher.EnableRaisingEvents = true;
             }
 
-            Init();
+            FillCtl();
         }
 
-        public void Init()
+        public void FillCtl()
         {
             Dictionary<string,X509Certificate> tmpTrustedIssuers = GetTrustedIssuersList();
             _rwLock.EnterWriteLock();
@@ -115,33 +116,26 @@ namespace CertVerify
             string authorityId = certificate.GetAuthorityKeyIdentifier();
             X509Certificate issuerCertifivate = null;
            
-            bool result;
+            
+            issuerCertifivate = GetCertificate(authorityId);
+            if (issuerCertifivate !=null && certificate.IsSignedBy(issuerCertifivate))
+                return true;
+            return false;
+        }
+
+        public X509Certificate GetCertificate(string authorityId)
+        {
+            X509Certificate issuerCertifivate;
             _rwLock.EnterReadLock();
             try
             {
-                result = _trustedIssuers.TryGetValue(authorityId, out issuerCertifivate);
+                _trustedIssuers.TryGetValue(authorityId, out issuerCertifivate);
             }
             finally
             {
                 _rwLock.ExitReadLock();
             }
-            if (result && IsSignatureValid(certificate, issuerCertifivate))
-                return true;
-            return false;
-        }
-
-        private bool IsSignatureValid(X509Certificate certificateToCheck, X509Certificate signerCertificate)
-        {
-            var publicKey = signerCertificate.GetPublicKey();
-            try
-            {
-                certificateToCheck.Verify(publicKey);
-            }
-            catch(Exception ex)
-            {
-                return false;
-            }
-            return true;
+            return issuerCertifivate;
         }
     }
 }

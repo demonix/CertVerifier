@@ -13,7 +13,13 @@ namespace CertVerify
     {
         ReaderWriterLockSlim _crlCacheLocker = new ReaderWriterLockSlim();
         Dictionary<string, Crl> _crlCache = new Dictionary<string, Crl>();
-        
+        private Ctl _ctl;
+
+        public CrlCache(Ctl ctl)
+        {
+            _ctl = ctl;
+        }
+
         public bool IsRevoked(X509Certificate certificate)
         {
             string authorityId = certificate.GetAuthorityKeyIdentifier();
@@ -58,7 +64,7 @@ namespace CertVerify
 
         private Crl CreateCrlEntry(string authorityId, List<string> cdpAddresses)
         {
-            Crl cacheEntry = new Crl(cdpAddresses);
+            Crl cacheEntry = new Crl(_ctl.GetCertificate(authorityId), cdpAddresses);
             _crlCacheLocker.EnterWriteLock();
             try
             {

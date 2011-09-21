@@ -8,7 +8,7 @@ namespace CertVerify
     internal class Crl
     {
         Timer _timer;
-        
+        private X509Certificate _issuerCertificate;
         TimeSpan _updateIntervalAfterNewCrlIssued = TimeSpan.FromMinutes(10);
         TimeSpan _updateIntervalAfterExpire = TimeSpan.FromSeconds(10);
         ReaderWriterLockSlim _rwLocker = new ReaderWriterLockSlim();
@@ -17,6 +17,7 @@ namespace CertVerify
         DateTime _notAfter = DateTime.MinValue;
         DateTime _nextPublish = DateTime.MinValue;
         private List<string> _cdpAddresses = new List<string>();
+
         
         public bool Valid
         { get { return !NotYetValid && !IsExpired; }}
@@ -35,8 +36,9 @@ namespace CertVerify
 
 
 
-        public Crl(List<string> cdpAddresses)
+        public Crl(X509Certificate issuerCertificate, List<string> cdpAddresses)
         {
+            _issuerCertificate = issuerCertificate;
             _cdpAddresses = cdpAddresses;
             _timer = new Timer(UpdateCrl);
             UpdateCrl(null);
@@ -50,6 +52,11 @@ namespace CertVerify
             {
                 Console.WriteLine("Can't update crl");
                 ShedeuleNextUpdate();
+                return;
+            }
+            if (!crl.IsSignedBy(_issuerCertificate))
+            {
+                Console.WriteLine("Downloaded CRL not issued by {0}", _issuerCertificate.SubjectDN);
                 return;
             }
             _notBefore = new DateTime(crl.ThisUpdate.Ticks, DateTimeKind.Utc).ToLocalTime();
