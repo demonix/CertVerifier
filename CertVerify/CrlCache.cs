@@ -22,13 +22,16 @@ namespace CertVerify
 
         public bool IsRevoked(X509Certificate certificate)
         {
+            if (certificate.IsRoot())
+                return false;
             string authorityId = certificate.GetAuthorityKeyIdentifier();
-            Crl ce = GetCrlEntry(authorityId);
-            if (ce == null)
-                ce = CreateCrlEntry(authorityId, certificate.GetCrlDistributionPointAddresses());
-            if (!ce.Valid)
+            //TODO: make this thread safe
+            Crl crl = GetCrl(authorityId);
+            if (crl == null)
+                crl = CreateCrlEntry(authorityId, certificate.GetCrlDistributionPointAddresses());
+            if (!crl.Valid)
                 return true;
-            return ce.Contains(certificate);
+            return crl.Contains(certificate) || IsRevoked(crl.IssuerCertificate);
         }
 
         public void RemoveCrlEntries(IEnumerable<string> authorityIds)
@@ -64,7 +67,7 @@ namespace CertVerify
 
         private Crl CreateCrlEntry(string authorityId, List<string> cdpAddresses)
         {
-            Crl cacheEntry = new Crl(_ctl.GetCertificate(authorityId), cdpAddresses);
+            Crl cacheEntry = new Crl(_ctl.GetIssuerCertificate(authorityId), cdpAddresses);
             _crlCacheLocker.EnterWriteLock();
             try
             {
@@ -77,7 +80,7 @@ namespace CertVerify
             return cacheEntry;
         }
 
-        private Crl GetCrlEntry(string authorityId)
+        private Crl GetCrl(string authorityId)
         {
             _crlCacheLocker.EnterReadLock();
             try

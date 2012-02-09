@@ -89,6 +89,8 @@
     <Compile Include="TaskQueue.cs" />
     <Compile Include="ThreadPool.cs" />
     <Compile Include="Verifier.cs" />
+    <Compile Include="VerifyByGetCommand.cs" />
+    <Compile Include="VerifyForJsonCommand.cs" />
     <Compile Include="WebServer.cs" />
   </ItemGroup>
   <ItemGroup>

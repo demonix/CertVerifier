@@ -26,8 +26,11 @@ namespace CertVerifierService
             lock (taskQueue)
                 if (!stopped)
                 {
+                    Log.Write("Queing");
                     taskQueue.Enqueue(task);
+                    Log.Write("Queued");
                     Monitor.Pulse(taskQueue);
+                    Log.Write("Pusled");
                 }
         }
 
@@ -35,8 +38,10 @@ namespace CertVerifierService
         {
             lock (taskQueue)
             {
+                Log.Write("DeQueing");
                 while (taskQueue.Count == 0 && !stopped)
                     Monitor.Wait(taskQueue);
+                Log.Write("DeQueued");
                 return stopped ? null : taskQueue.Dequeue();
             }
         }

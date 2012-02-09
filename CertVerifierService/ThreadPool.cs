@@ -25,33 +25,28 @@ namespace CertVerifierService
         {
             try
             {
-                Log("Start.");
+                Log.Write("Start.");
                 while (!TaskQueue.Stopped)
                 {
+                    Log.Write("WaitForQueue");
                     Task task = TaskQueue.Dequeue();
                     if (task != null)
-                        
-                            ((Handler)handler).Handle(task);
+                    {
+                        Log.Write("Before handle");
+                        ((Handler) handler).Handle(task);
+                        Log.Write("Handled");
+                    }
                 }
-                Log("Finish.");
+                Log.Write("Finish.");
             }
             catch (Exception e)
             {
-                Log(e);
+                Log.Write(e);
                 StartThread();
                 Thread.CurrentThread.Abort();
             }
         }
 
-        private static void Log(string message)
-        {
-            CertVerifierService.Log.Write(message);
-        }
-
-
-        private static void Log(Exception e)
-        {
-            CertVerifierService.Log.Write(string.Format("Unhandled exception. Exception details: {0}",e));
-        }
+       
     }
 }

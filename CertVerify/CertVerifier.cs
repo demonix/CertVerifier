@@ -20,8 +20,13 @@ namespace CertVerify
 
         public CertVerifyResult Verify(byte[] certificate)
         {
+            
             if (certificate[0] != 0x30 && certificate[0] != 0x2D)
+            {
+                Log.Write("Adding footer");
                 AddHeaderAndFooter(ref certificate);
+                Log.Write("Added footer");
+            }
             return Verify(X509CertificateHelper.CreateCertificateFromBytes(certificate));
         }
 
@@ -37,14 +42,19 @@ namespace CertVerify
 
         public CertVerifyResult Verify(X509Certificate certificate)
         {
+            Log.Write("Verify expired");
             if (certificate.NotAfter < DateTime.UtcNow)
                 return CertVerifyResult.Expired;
+            Log.Write("Verify not yet valid");
             if (certificate.NotBefore > DateTime.UtcNow)
                 return CertVerifyResult.NotYetValid;
+            Log.Write("Verify trusted");
             if (!_ctl.MayTrustTo(certificate))
                 return CertVerifyResult.NotTrusted;
+            Log.Write("Verify revoked");
             if (_ctl.CrlCache.IsRevoked(certificate))
                 return CertVerifyResult.Revoked;
+            Log.Write("return valid");
             return CertVerifyResult.Valid;
         }
     }

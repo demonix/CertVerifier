@@ -20,12 +20,15 @@ namespace CertVerifierService
             try
             {
                 byte[] readBuffer = new byte[httpContext.Request.ContentLength64];
-                if (httpContext.Request.InputStream.Read(readBuffer, 0, readBuffer.Length)== 0)
-                    throw new Exception("Can't read request body.");
+                httpContext.Request.InputStream.Read(readBuffer, 0, readBuffer.Length);
+                //if (httpContext.Request.InputStream.Read(readBuffer, 0, readBuffer.Length)== 0)
+                //    throw new Exception("Can't read request body.");
                 var p = new Parameters(readBuffer, httpContext.Request.QueryString);
                 ICommand command = CommandFactory.GetCommand(p);
+                Log.Write("Executing");
                 byte[] buffer = Encoding.UTF8.GetBytes(command.Execute());
                 WriteResponse(httpContext, buffer, HttpStatusCode.OK, "OK", "text/plain");
+                Log.Write("Executed");
             }
             catch (Exception ex)
             {

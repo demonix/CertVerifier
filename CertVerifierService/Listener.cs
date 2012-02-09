@@ -9,7 +9,7 @@ namespace CertVerifierService
     {
         public static void Listen(object port)
         {
-            WebServer webServer = new WebServer("http://+:8989/certVerifier/");
+            WebServer webServer = new WebServer("http://+:8089/certVerifier/");
             webServer.IncomingRequest += WebServerIncomingRequest;
             webServer.Start();
 

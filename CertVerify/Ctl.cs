@@ -113,17 +113,19 @@ namespace CertVerify
 
         public bool MayTrustTo(X509Certificate certificate)
         {
+            Log.Write("Get authority key");
             string authorityId = certificate.GetAuthorityKeyIdentifier();
-            X509Certificate issuerCertifivate = null;
-           
-            
-            issuerCertifivate = GetCertificate(authorityId);
-            if (issuerCertifivate !=null && certificate.IsSignedBy(issuerCertifivate))
+            Log.Write("Got authority key");
+            Log.Write("Get issuer");
+            X509Certificate issuerCertificate = GetIssuerCertificate(authorityId);
+            Log.Write("Got issuer");
+            Log.Write("Check signature");
+            if (issuerCertificate != null && certificate.IsSignedBy(issuerCertificate))
                 return true;
             return false;
         }
 
-        public X509Certificate GetCertificate(string authorityId)
+        public X509Certificate GetIssuerCertificate(string authorityId)
         {
             X509Certificate issuerCertifivate;
             _rwLock.EnterReadLock();

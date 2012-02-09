@@ -18,6 +18,8 @@ namespace CertVerify
         DateTime _nextPublish = DateTime.MinValue;
         private List<string> _cdpAddresses = new List<string>();
 
+        public X509Certificate IssuerCertificate
+        { get { return _issuerCertificate; } }
         
         public bool Valid
         { get { return !NotYetValid && !IsExpired; }}
@@ -46,7 +48,7 @@ namespace CertVerify
 
         private void UpdateCrl(object state)
         {
-            Console.WriteLine("Updating Crl...");
+            Console.WriteLine("Updating Crl for {0}", _issuerCertificate.SubjectDN);
             X509Crl crl = CrlDownloader.DownloadCrl(_cdpAddresses);
             if (crl == null)
             {
@@ -57,6 +59,7 @@ namespace CertVerify
             if (!crl.IsSignedBy(_issuerCertificate))
             {
                 Console.WriteLine("Downloaded CRL not issued by {0}", _issuerCertificate.SubjectDN);
+                ShedeuleNextUpdate();
                 return;
             }
             _notBefore = new DateTime(crl.ThisUpdate.Ticks, DateTimeKind.Utc).ToLocalTime();
@@ -91,7 +94,7 @@ namespace CertVerify
             if (IsExpired || WillExpireAt(DateTime.Now.Add(_updateIntervalAfterNewCrlIssued)))
             {
                 if (WillExpireAt(DateTime.Now.Add(_updateIntervalAfterExpire)))
-                    nextRun = _notAfter.Subtract(DateTime.Now).Subtract(TimeSpan.FromSeconds(5));
+                    nextRun = _notAfter.Subtract(DateTime.Now).Subtract(TimeSpan.FromSeconds(60));
                 else
                     nextRun = _updateIntervalAfterExpire;
             }
